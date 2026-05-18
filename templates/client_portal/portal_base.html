@@ -60,6 +60,16 @@
                            {% if request.resolver_match.url_name == 'activity' %}style="background: var(--primary); color: white;"{% else %}style="color: var(--text-secondary);"{% endif %}>
                             Activity
                         </a>
+                        <a href="{% url 'client_portal:socials' %}"
+                           class="px-3 py-1.5 text-[0.8125rem] font-medium rounded-full transition-colors {% if request.resolver_match.url_name == 'socials' %}text-white{% else %}hover:bg-black/[0.04]{% endif %}"
+                           {% if request.resolver_match.url_name == 'socials' %}style="background: var(--primary); color: white;"{% else %}style="color: var(--text-secondary);"{% endif %}>
+                            Socials
+                        </a>
+                        <a href="{% url 'client_portal:reports' %}"
+                           class="px-3 py-1.5 text-[0.8125rem] font-medium rounded-full transition-colors {% if request.resolver_match.url_name == 'reports' %}text-white{% else %}hover:bg-black/[0.04]{% endif %}"
+                           {% if request.resolver_match.url_name == 'reports' %}style="background: var(--primary); color: white;"{% else %}style="color: var(--text-secondary);"{% endif %}>
+                            Stats
+                        </a>
                     </nav>
                     <a href="{% url 'accounts:logout' %}"
                        class="px-3 py-1.5 text-[0.8125rem] font-medium rounded-full transition-colors hover:bg-black/[0.04]"
@@ -91,12 +101,31 @@
                    {% if request.resolver_match.url_name == 'activity' %}style="background: var(--primary);"{% else %}style="color: var(--text-secondary);"{% endif %}>
                     Activity
                 </a>
+                <a href="{% url 'client_portal:socials' %}"
+                   class="px-3 py-1.5 text-[0.8125rem] font-medium rounded-full flex-shrink-0 transition-colors {% if request.resolver_match.url_name == 'socials' %}text-white{% else %}hover:bg-black/[0.04]{% endif %}"
+                   {% if request.resolver_match.url_name == 'socials' %}style="background: var(--primary);"{% else %}style="color: var(--text-secondary);"{% endif %}>
+                    Socials
+                </a>
+                <a href="{% url 'client_portal:reports' %}"
+                   class="px-3 py-1.5 text-[0.8125rem] font-medium rounded-full flex-shrink-0 transition-colors {% if request.resolver_match.url_name == 'reports' %}text-white{% else %}hover:bg-black/[0.04]{% endif %}"
+                   {% if request.resolver_match.url_name == 'reports' %}style="background: var(--primary);"{% else %}style="color: var(--text-secondary);"{% endif %}>
+                    Stats
+                </a>
             </nav>
         </div>
     </header>
 
     <!-- Main content -->
     <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        {% if messages %}
+        <div class="mb-4 space-y-2">
+            {% for message in messages %}
+            <div class="rounded-lg px-4 py-3 text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 

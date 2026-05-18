@@ -13,6 +13,7 @@ urlpatterns = [
     path("approvals/<uuid:post_id>/reject/", views.portal_reject, name="reject"),
     path("published/", views.portal_published, name="published"),
     path("activity/", views.portal_activity, name="activity"),
+    path("socials/", views.portal_socials, name="socials"),
     path("reports/", views.portal_reports, name="reports"),
     # Magic link entry must be last (catches any token string)
     path("<str:token>/", views.magic_link_entry, name="magic_link_entry"),

@@ -85,6 +85,21 @@ def _build_connection_redirect_uri(request, platform):
     return request.build_absolute_uri(reverse("onboarding:oauth_callback", kwargs={"platform": platform}))
 
 
+def _redirect_after_connection_step(request, token, link=None):
+    """Return portal clients to the portal; public link users stay on the link page."""
+    link = link or _get_connection_link_or_none(token)
+    if (
+        link
+        and request.user.is_authenticated
+        and request.session.get("is_portal_session")
+        and request.session.get("portal_workspace_id") == str(link.workspace_id)
+    ):
+        if error := request.session.pop("connection_link_error", None):
+            messages.error(request, error)
+        return redirect("client_portal:socials")
+    return redirect("onboarding:connection_page", token=token)
+
+
 def _check_rate_limit(token):
     """Rate limit OAuth initiations per token. Returns True if allowed."""
     key = f"connection_link_oauth_rate:{token}"
@@ -281,16 +296,16 @@ def connection_oauth_start(request, token):
     # Rate limit
     if not _check_rate_limit(token):
         request.session["connection_link_error"] = "Too many connection attempts. Please try again later."
-        return redirect("onboarding:connection_page", token=token)
+        return _redirect_after_connection_step(request, token, link)
 
     platform = request.POST.get("platform", "").strip()
     if platform not in dict(PlatformCredential.Platform.choices):
-        return redirect("onboarding:connection_page", token=token)
+        return _redirect_after_connection_step(request, token, link)
 
     org = link.workspace.organization
     configured_platforms = _get_configured_platforms(org.id)
     if platform not in configured_platforms:
-        return redirect("onboarding:connection_page", token=token)
+        return _redirect_after_connection_step(request, token, link)
 
     # Bluesky and Mastodon use their own forms on the connection page
     # (not standard OAuth via this endpoint), so reject them here.
@@ -298,7 +313,7 @@ def connection_oauth_start(request, token):
         PlatformCredential.Platform.BLUESKY,
         PlatformCredential.Platform.MASTODON,
     ):
-        return redirect("onboarding:connection_page", token=token)
+        return _redirect_after_connection_step(request, token, link)
 
     # Standard OAuth flow
     provider = _get_provider_for_platform(platform, org.id)
@@ -328,7 +343,7 @@ def connection_oauth_callback(request, platform):
         token = session_data.get("token")
         if token:
             request.session["connection_link_error"] = f"Authorization failed: {error_desc}"
-            return redirect("onboarding:connection_page", token=token)
+            return _redirect_after_connection_step(request, token)
         return render(
             request,
             "onboarding/connection_expired.html",
@@ -428,7 +443,7 @@ def connection_oauth_callback(request, platform):
                         connection_link=link,
                         social_account=account,
                     )
-                return redirect("onboarding:connection_page", token=token)
+                return _redirect_after_connection_step(request, token, link)
 
         # Standard single-account flow
         account = _create_or_update_account(
@@ -450,7 +465,7 @@ def connection_oauth_callback(request, platform):
         # Store error in session to display on connection page
         request.session["connection_link_error"] = "Failed to connect account. Please try again."
 
-    return redirect("onboarding:connection_page", token=token)
+    return _redirect_after_connection_step(request, token, link)
 
 
 @require_POST
@@ -490,6 +505,14 @@ def connection_done(request, token):
             },
         )
 
+    if (
+        request.user.is_authenticated
+        and request.session.get("is_portal_session")
+        and request.session.get("portal_workspace_id") == str(link.workspace_id)
+    ):
+        messages.success(request, "Social accounts updated.")
+        return redirect("client_portal:socials")
+
     return render(
         request,
         "onboarding/connection_success.html",
@@ -513,7 +536,7 @@ def connection_bluesky_connect(request, token):
 
     if not handle or not app_password:
         request.session["connection_link_error"] = "Handle and app password are required."
-        return redirect("onboarding:connection_page", token=token)
+        return _redirect_after_connection_step(request, token, link)
 
     org = link.workspace.organization
 
@@ -542,7 +565,7 @@ def connection_bluesky_connect(request, token):
             "Failed to connect Bluesky account. Check your handle and app password."
         )
 
-    return redirect("onboarding:connection_page", token=token)
+    return _redirect_after_connection_step(request, token, link)
 
 
 @csp_update(FORM_ACTION="'self' https:")
@@ -556,7 +579,7 @@ def connection_mastodon_start(request, token):
     instance_url = _normalize_mastodon_instance_url(request.POST.get("instance_url", ""))
     if not instance_url:
         request.session["connection_link_error"] = "Instance URL is required."
-        return redirect("onboarding:connection_page", token=token)
+        return _redirect_after_connection_step(request, token, link)
 
     org = link.workspace.organization
 
@@ -586,7 +609,7 @@ def connection_mastodon_start(request, token):
         except Exception:
             logger.exception("Mastodon app registration failed for %s", instance_url)
             request.session["connection_link_error"] = f"Failed to register with {instance_url}. Check the URL."
-            return redirect("onboarding:connection_page", token=token)
+            return _redirect_after_connection_step(request, token, link)
 
     # Initiate OAuth
     provider = _get_provider_for_platform(

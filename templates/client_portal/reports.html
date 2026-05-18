@@ -1,19 +1,144 @@
 {% extends "client_portal/portal_base.html" %}
-{% block title %}Reports - {{ workspace.name }}{% endblock %}
+{% load humanize %}
+{% block title %}Stats - {{ workspace.name }}{% endblock %}
 
 {% block content %}
 <div>
     <div class="mb-6">
-        <h1 class="text-xl font-bold tracking-tight" style="color: var(--text-primary);">Reports</h1>
-        <p class="text-sm mt-0.5" style="color: var(--text-secondary);">Performance reports shared with you</p>
+        <h1 class="text-xl font-bold tracking-tight" style="color: var(--text-primary);">Stats</h1>
+        <p class="text-sm mt-0.5" style="color: var(--text-secondary);">Last 30 days across {{ workspace.name }}</p>
     </div>
 
-    <div class="text-center py-16">
-        <div class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4" style="background: var(--primary-soft);">
-            <svg class="w-8 h-8" style="color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="rounded-xl border p-5" style="background: var(--surface-0); border-color: var(--border);">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Followers</p>
+            <p class="text-2xl font-bold tracking-tight mt-2" style="color: var(--text-primary);">{{ total_followers|intcomma }}</p>
         </div>
-        <p class="font-semibold text-[0.9375rem]" style="color: var(--text-primary);">Reports coming soon</p>
-        <p class="text-sm mt-1 max-w-sm mx-auto" style="color: var(--text-tertiary);">Your team will be able to share performance reports with you here. Check back soon!</p>
+        <div class="rounded-xl border p-5" style="background: var(--surface-0); border-color: var(--border);">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Published</p>
+            <p class="text-2xl font-bold tracking-tight mt-2" style="color: var(--text-primary);">{{ published_30d|intcomma }}</p>
+        </div>
+        <div class="rounded-xl border p-5" style="background: var(--surface-0); border-color: var(--border);">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Scheduled</p>
+            <p class="text-2xl font-bold tracking-tight mt-2" style="color: var(--text-primary);">{{ scheduled_count|intcomma }}</p>
+        </div>
+        <div class="rounded-xl border p-5" style="background: var(--surface-0); border-color: var(--border);">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Awaiting Review</p>
+            <p class="text-2xl font-bold tracking-tight mt-2" style="color: var(--text-primary);">{{ pending_count|intcomma }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 rounded-xl border overflow-hidden" style="background: var(--surface-0); border-color: var(--border);">
+            <div class="px-5 py-4 border-b" style="border-color: var(--border);">
+                <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Channel Performance</h2>
+            </div>
+            {% if accounts %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left border-b" style="border-color: var(--border); color: var(--text-tertiary);">
+                            <th class="px-5 py-3 font-semibold">Account</th>
+                            <th class="px-5 py-3 font-semibold">Followers</th>
+                            <th class="px-5 py-3 font-semibold">Published</th>
+                            <th class="px-5 py-3 font-semibold">Scheduled</th>
+                            <th class="px-5 py-3 font-semibold">Last Post</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in accounts %}
+                        <tr class="border-b last:border-b-0" style="border-color: var(--border);">
+                            <td class="px-5 py-4">
+                                <div class="font-semibold" style="color: var(--text-primary);">{{ account.account_name }}</div>
+                                <div class="text-xs" style="color: var(--text-tertiary);">{{ account.get_platform_display }}</div>
+                            </td>
+                            <td class="px-5 py-4" style="color: var(--text-secondary);">{{ account.follower_count|intcomma }}</td>
+                            <td class="px-5 py-4" style="color: var(--text-secondary);">{{ account.published_count_30d|intcomma }}</td>
+                            <td class="px-5 py-4" style="color: var(--text-secondary);">{{ account.scheduled_count|intcomma }}</td>
+                            <td class="px-5 py-4" style="color: var(--text-secondary);">
+                                {% if account.last_published_at %}{{ account.last_published_at|date:"M j, Y" }}{% else %}-{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="px-5 py-10 text-sm text-center" style="color: var(--text-tertiary);">No connected accounts yet.</div>
+            {% endif %}
+        </div>
+
+        <div class="rounded-xl border p-5" style="background: var(--surface-0); border-color: var(--border);">
+            <h2 class="text-sm font-semibold mb-4" style="color: var(--text-primary);">Live Metrics</h2>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Impressions</p>
+                    <p class="text-xl font-bold mt-1" style="color: var(--text-primary);">{{ metric_totals.impressions|intcomma }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Engagements</p>
+                    <p class="text-xl font-bold mt-1" style="color: var(--text-primary);">{{ metric_totals.engagements|intcomma }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <div class="rounded-lg p-3" style="background: var(--surface-1);">
+                        <p class="text-xs" style="color: var(--text-tertiary);">Likes</p>
+                        <p class="font-bold" style="color: var(--text-primary);">{{ metric_totals.likes|intcomma }}</p>
+                    </div>
+                    <div class="rounded-lg p-3" style="background: var(--surface-1);">
+                        <p class="text-xs" style="color: var(--text-tertiary);">Comments</p>
+                        <p class="font-bold" style="color: var(--text-primary);">{{ metric_totals.comments|intcomma }}</p>
+                    </div>
+                    <div class="rounded-lg p-3" style="background: var(--surface-1);">
+                        <p class="text-xs" style="color: var(--text-tertiary);">Shares</p>
+                        <p class="font-bold" style="color: var(--text-primary);">{{ metric_totals.shares|intcomma }}</p>
+                    </div>
+                    <div class="rounded-lg p-3" style="background: var(--surface-1);">
+                        <p class="text-xs" style="color: var(--text-tertiary);">Clicks</p>
+                        <p class="font-bold" style="color: var(--text-primary);">{{ metric_totals.clicks|intcomma }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rounded-xl border overflow-hidden mt-6" style="background: var(--surface-0); border-color: var(--border);">
+        <div class="px-5 py-4 border-b" style="border-color: var(--border);">
+            <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Recent Published Posts</h2>
+        </div>
+        {% if recent_posts %}
+        <div class="divide-y" style="border-color: var(--border);">
+            {% for row in recent_posts %}
+            {% with platform_post=row.platform_post metrics=row.metrics %}
+            <div class="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold truncate" style="color: var(--text-primary);">{{ platform_post.post.title|default:platform_post.effective_caption|truncatechars:80 }}</div>
+                    <div class="text-xs mt-1" style="color: var(--text-tertiary);">{{ platform_post.social_account.account_name }} · {{ platform_post.published_at|date:"M j, Y" }}</div>
+                </div>
+                <div class="grid grid-cols-4 gap-3 text-right flex-shrink-0">
+                    <div>
+                        <p class="text-sm font-bold" style="color: var(--text-primary);">{% if metrics %}{{ metrics.impressions|intcomma }}{% else %}-{% endif %}</p>
+                        <p class="text-[0.6875rem]" style="color: var(--text-tertiary);">Imp.</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold" style="color: var(--text-primary);">{% if metrics %}{{ metrics.engagements|intcomma }}{% else %}-{% endif %}</p>
+                        <p class="text-[0.6875rem]" style="color: var(--text-tertiary);">Eng.</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold" style="color: var(--text-primary);">{% if metrics %}{{ metrics.likes|intcomma }}{% else %}-{% endif %}</p>
+                        <p class="text-[0.6875rem]" style="color: var(--text-tertiary);">Likes</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold" style="color: var(--text-primary);">{% if metrics %}{{ metrics.comments|intcomma }}{% else %}-{% endif %}</p>
+                        <p class="text-[0.6875rem]" style="color: var(--text-tertiary);">Com.</p>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="px-5 py-10 text-sm text-center" style="color: var(--text-tertiary);">No published posts yet.</div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

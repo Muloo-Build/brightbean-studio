@@ -1,0 +1,144 @@
+{% extends "client_portal/portal_base.html" %}
+{% load humanize social_accounts_tags %}
+{% block title %}Socials - {{ workspace.name }}{% endblock %}
+
+{% block content %}
+<div>
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight" style="color: var(--text-primary);">Socials</h1>
+            <p class="text-sm mt-0.5" style="color: var(--text-secondary);">{{ accounts|length }} account{{ accounts|length|pluralize }} connected</p>
+        </div>
+        <a href="#connect-accounts"
+           class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full text-white transition-all hover:-translate-y-0.5"
+           style="background: var(--primary); box-shadow: var(--shadow-primary);">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Connect Account
+        </a>
+    </div>
+
+    {% if accounts %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for account in accounts %}
+        <div class="rounded-xl border p-5" style="background: var(--surface-0); border-color: var(--border);">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    {% if account.avatar_url %}
+                    <img src="{{ account.avatar_url }}" alt="" class="w-12 h-12 rounded-full object-cover">
+                    {% else %}
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: var(--surface-2); color: var(--text-tertiary);">
+                        {% include "social_accounts/partials/_platform_icon.html" with platform=account.platform size="5" %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-sm font-semibold truncate" style="color: var(--text-primary);">{{ account.account_name }}</h2>
+                        <span style="color: var(--text-tertiary);">
+                            {% include "social_accounts/partials/_platform_icon.html" with platform=account.platform size="4" %}
+                        </span>
+                    </div>
+                    {% if account.account_handle %}
+                    <p class="text-xs truncate mt-0.5" style="color: var(--text-tertiary);">@{{ account.account_handle|cut:"@" }}</p>
+                    {% endif %}
+                    <div class="flex flex-wrap items-center gap-2 mt-3">
+                        {% include "social_accounts/partials/_status_badge.html" with status=account.connection_status error=account.last_error %}
+                        <span class="text-xs" style="color: var(--text-tertiary);">{{ account.follower_count|intcomma }} followers</span>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mt-5 pt-4 border-t" style="border-color: var(--border);">
+                <div>
+                    <p class="text-lg font-bold tracking-tight" style="color: var(--text-primary);">{{ account.published_count }}</p>
+                    <p class="text-[0.6875rem]" style="color: var(--text-tertiary);">Published</p>
+                </div>
+                <div>
+                    <p class="text-lg font-bold tracking-tight" style="color: var(--text-primary);">{{ account.scheduled_count }}</p>
+                    <p class="text-[0.6875rem]" style="color: var(--text-tertiary);">Scheduled</p>
+                </div>
+                <div>
+                    <p class="text-lg font-bold tracking-tight" style="color: var(--text-primary);">
+                        {% if account.last_published_at %}{{ account.last_published_at|date:"M j" }}{% else %}-{% endif %}
+                    </p>
+                    <p class="text-[0.6875rem]" style="color: var(--text-tertiary);">Last post</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 px-6 rounded-xl border" style="background: var(--surface-0); border-color: var(--border);">
+        <div class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4" style="background: var(--primary-soft);">
+            <svg class="w-8 h-8" style="color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+        <p class="font-semibold text-[0.9375rem]" style="color: var(--text-primary);">No social accounts connected</p>
+        <a href="#connect-accounts"
+           class="mt-5 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full text-white transition-all"
+           style="background: var(--primary);">
+            Connect Account
+        </a>
+    </div>
+    {% endif %}
+
+    <div id="connect-accounts" class="mt-8 rounded-xl border p-5" style="background: var(--surface-0); border-color: var(--border);">
+        <div class="mb-5">
+            <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Connect Accounts</h2>
+            <p class="text-xs mt-1" style="color: var(--text-tertiary);">Available channels for {{ workspace.name }}</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for value, label in platform_choices %}
+            {% if value in configured_platforms %}
+            <div class="rounded-xl border p-4" style="border-color: var(--border);">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--surface-1); color: var(--text-secondary);">
+                        {% include "social_accounts/partials/_platform_icon.html" with platform=value size="5" %}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-sm font-semibold" style="color: var(--text-primary);">{{ label }}</h3>
+                        {% if value == 'facebook' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Pages &amp; Groups</p>
+                        {% elif value == 'instagram' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Business &amp; Creator</p>
+                        {% elif value == 'instagram_personal' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Personal, creator, business</p>
+                        {% elif value == 'linkedin_personal' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Personal profile</p>
+                        {% elif value == 'linkedin_company' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Company pages</p>
+                        {% elif value == 'tiktok' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Video content</p>
+                        {% elif value == 'youtube' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Videos &amp; Shorts</p>
+                        {% elif value == 'pinterest' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Pins &amp; Boards</p>
+                        {% elif value == 'threads' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Text &amp; Media</p>
+                        {% elif value == 'bluesky' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">AT Protocol</p>
+                        {% elif value == 'google_business' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Local posts</p>
+                        {% elif value == 'mastodon' %}<p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Federated social</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if value == 'bluesky' %}
+                <form method="post" action="{% url 'onboarding:connection_bluesky' token=connection_link.token %}" class="mt-4 space-y-2">
+                    {% csrf_token %}
+                    <input type="text" name="handle" placeholder="Handle" required class="w-full rounded-lg border px-3 py-2 text-sm" style="border-color: var(--border);">
+                    <input type="password" name="app_password" placeholder="App password" required class="w-full rounded-lg border px-3 py-2 text-sm" style="border-color: var(--border);">
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full text-white" style="background: var(--primary);">Connect</button>
+                </form>
+                {% elif value == 'mastodon' %}
+                <form method="post" action="{% url 'onboarding:connection_mastodon' token=connection_link.token %}" class="mt-4 space-y-2">
+                    {% csrf_token %}
+                    <input type="text" name="instance_url" placeholder="mastodon.social" required class="w-full rounded-lg border px-3 py-2 text-sm" style="border-color: var(--border);">
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full text-white" style="background: var(--primary);">Connect</button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'onboarding:connection_oauth_start' token=connection_link.token %}" class="mt-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="platform" value="{{ value }}">
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full text-white" style="background: var(--primary);">
+                        Connect
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

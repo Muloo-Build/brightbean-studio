@@ -21,6 +21,7 @@ from django_ratelimit.decorators import ratelimit
 
 from apps.common.validators import is_safe_url as _is_safe_url
 from apps.credentials.models import PlatformCredential
+from apps.credentials.platforms import NO_APP_CREDENTIAL_PLATFORMS, has_required_credentials
 from apps.members.decorators import require_permission
 
 from .models import MastodonAppRegistration, PlatformVisibility, SocialAccount
@@ -60,15 +61,12 @@ def _get_visible_platform_choices():
 
 def _get_configured_platforms(org_id):
     """Return set of platform names that have credentials configured."""
-    from providers import PROVIDER_REGISTRY
-    from providers.types import AuthType
-
     configured = set(
         PlatformCredential.objects.for_org(org_id).filter(is_configured=True).values_list("platform", flat=True)
     )
     env_creds = getattr(settings, "PLATFORM_CREDENTIALS_FROM_ENV", {})
     for platform, creds in env_creds.items():
-        if any(v for v in creds.values()):
+        if has_required_credentials(platform, creds):
             configured.add(platform)
 
     # Session-auth platforms (e.g. Bluesky) don't need app-level credentials —
