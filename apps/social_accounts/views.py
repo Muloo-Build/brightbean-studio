@@ -25,6 +25,8 @@ from apps.credentials.platforms import NO_APP_CREDENTIAL_PLATFORMS, has_required
 from apps.members.decorators import require_permission
 
 from .models import MastodonAppRegistration, PlatformVisibility, SocialAccount
+from providers import PROVIDER_REGISTRY
+from providers.types import AuthType
 
 logger = logging.getLogger(__name__)
 
