@@ -20,7 +20,7 @@ PLATFORM_CREDENTIAL_FIELDS = {
         ("app_id", "App ID", False),
         ("app_secret", "App Secret", True),
     ],
-    PlatformCredential.Platform.INSTAGRAM_PERSONAL: [
+    PlatformCredential.Platform.INSTAGRAM_LOGIN: [
         ("app_id", "Instagram App ID", False),
         ("app_secret", "Instagram App Secret", True),
     ],
