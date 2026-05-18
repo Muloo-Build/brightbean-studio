@@ -70,13 +70,9 @@ class FacebookProvider(SocialProvider):
     @property
     def required_scopes(self) -> list[str]:
         return [
-            "business_management",
             "pages_show_list",
-            "pages_manage_posts",
             "pages_read_engagement",
-            "pages_read_user_content",
             "pages_manage_metadata",
-            "pages_messaging",
         ]
 
     @property
